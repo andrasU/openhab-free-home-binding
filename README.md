@@ -46,16 +46,32 @@ To use this binding please do the following steps:
 
 ## Setup
 1. Enter your openHAB webfrontend with     `<device IP>:8080`
+![Login](https://github.com/andrasU/openhab-free-home-binding/blob/main/images/Login.png)
+
 2. Log into openHAB with your crendetials at the lower left side
+![Login](https://github.com/andrasU/openhab-free-home-binding/blob/main/images/login2.png)
+
 3. Browse to "Settings -> Things" and press the "+" symbol
+![Login](https://github.com/andrasU/openhab-free-home-binding/blob/main/images/things1.png)
+
+![Login](https://github.com/andrasU/openhab-free-home-binding/blob/main/images/thing2.png)
+
 4. Choose "FreeAtHome System Binding" and click "Free@home Bridge"
+![Login](https://github.com/andrasU/openhab-free-home-binding/blob/main/images/thing3.png)
+
+![Login](https://github.com/andrasU/openhab-free-home-binding/blob/main/images/bridge1.png)
+
 5. Add the required data: SysAP IP adress, username and password
 
 **ATTENTION:** The username here has to be from "Settings -> free@home settings -> local API, NOT the username from webfrontend or used in the app for login)
 
+![Login](https://github.com/andrasU/openhab-free-home-binding/blob/main/images/bridge2.png)
+
 6. Press save in the righter upper corner
 7. If everthing is right the Bridge should went "Online"
 8. "Scan" for the free@home devices and set them up
+![Login](https://github.com/andrasU/openhab-free-home-binding/blob/main/images/scan1.png)
+
 
 # Communities
 [Busch-Jaeger Community](https://community.busch-jaeger.de/)
