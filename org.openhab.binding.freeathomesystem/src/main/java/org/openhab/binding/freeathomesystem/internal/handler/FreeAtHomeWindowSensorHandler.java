@@ -16,7 +16,7 @@ package org.openhab.binding.freeathomesystem.internal.handler;
 import java.util.Map;
 
 import org.openhab.binding.freeathomesystem.internal.FreeAtHomeSystemBindingConstants;
-import org.openhab.core.library.types.OnOffType;
+import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.Thing;
@@ -24,34 +24,44 @@ import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.ThingStatusDetail;
 import org.openhab.core.thing.binding.ThingHandler;
 import org.openhab.core.types.Command;
-import org.openhab.core.types.RefreshType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ValueStateConverters.BooleanValueStateConverter;
+import ValueStateConverters.DecimalValueStateConverter;
 
 /**
- * The {@link FreeAtHomeSwitchHandler} is responsible for handling commands, which are
+ * The {@link FreeAtHomeActuatorHandler} is responsible for handling commands, which are
  * sent to one of the channels.
  *
  * @author Andras Uhrin - Initial contribution
  *
  */
 
-public class FreeAtHomeSwitchHandler extends FreeAtHomeSystemBaseHandler {
+public class FreeAtHomeWindowSensorHandler extends FreeAtHomeSystemBaseHandler {
 
     private String deviceID;
     private String deviceChannel;
-    private String deviceOdp;
-    private String deviceIdp;
+    private String devicePosOdp;
+    private String deviceStateOdp;
 
     private FreeAtHomeBridgeHandler freeAtHomeBridge = null;
 
-    private final Logger logger = LoggerFactory.getLogger(FreeAtHomeSwitchHandler.class);
+    private final Logger logger = LoggerFactory.getLogger(FreeAtHomeWindowSensorHandler.class);
 
-    public FreeAtHomeSwitchHandler(Thing thing) {
+    public FreeAtHomeWindowSensorHandler(Thing thing) {
         super(thing);
     }
+
+    // "outputs": {
+    // "odp0000": {
+    // "pairingID": 53, window door open 1 close 0 deviceStateOdp
+    // "value": "0"
+    // },
+    // "odp0001": {
+    // "pairingID": 41, Delivers position for Window/Door (Open / Tilted / Closed) devicePosOdp
+    // "value": "0"
+    // }
 
     @Override
     public void initialize() {
@@ -70,20 +80,20 @@ public class FreeAtHomeSwitchHandler extends FreeAtHomeSystemBaseHandler {
 
                 // Initialize the communication device channel properties
                 if (deviceInterface.equalsIgnoreCase(FreeAtHomeDeviceDescription.DEVICE_INTERFACE_WIRELESS_TYPE)) {
-                    deviceChannel = "ch0006";
-                    deviceOdp = "odp0000";
-                    deviceIdp = "idp0000";
+                    deviceChannel = "ch0000";
+                    deviceStateOdp = "odp0000";
+                    devicePosOdp = "----";
                 } else if (deviceInterface
                         .equalsIgnoreCase(FreeAtHomeDeviceDescription.DEVICE_INTERFACE_VIRTUAL_TYPE)) {
                     deviceChannel = "ch0000";
-                    deviceOdp = "odp0000";
-                    deviceIdp = "idp0000";
+                    deviceStateOdp = "odp0000";
+                    devicePosOdp = "odp0001";
                 }
 
-                logger.debug("Initialize switch - {}", deviceID);
+                logger.debug("Initialize window sensor - {}", deviceID);
 
-                // Get initial state of the switch directly from the free@home switch
-                String valueString = freeAtHomeBridge.getDatapoint(deviceID, deviceChannel, deviceOdp);
+                // Get initial state of the switch directly from the free@home sensor
+                String valueString = freeAtHomeBridge.getDatapoint(deviceID, deviceChannel, deviceStateOdp);
 
                 int value;
 
@@ -93,19 +103,36 @@ public class FreeAtHomeSwitchHandler extends FreeAtHomeSystemBaseHandler {
                     value = 0;
                 }
 
+                DecimalType decState = new DecimalType(value);
+
                 // set the initial state
-                if (1 == value) {
-                    updateState(FreeAtHomeSystemBindingConstants.SWITCH_CHANNEL_ID, OnOffType.ON);
-                } else {
-                    updateState(FreeAtHomeSystemBindingConstants.SWITCH_CHANNEL_ID, OnOffType.OFF);
+                updateState(FreeAtHomeSystemBindingConstants.WINDOWSENSOR_CHANNEL_STATE_ID, decState);
+
+                // Get initial state of the switch directly from the free@home sensor
+                valueString = freeAtHomeBridge.getDatapoint(deviceID, deviceChannel, devicePosOdp);
+
+                try {
+                    value = Integer.parseInt(valueString);
+                } catch (NumberFormatException e) {
+                    value = 0;
                 }
+
+                DecimalType decPos = new DecimalType(value);
+
+                // set the initial state
+                updateState(FreeAtHomeSystemBindingConstants.WINDOWSENSOR_CHANNEL_POS_ID, decPos);
 
                 // Register device and specific channel for event based state updated
                 if (null != freeAtHomeBridge.channelUpdateHandler) {
-                    freeAtHomeBridge.channelUpdateHandler.registerChannel(deviceID, deviceChannel, deviceOdp, this,
+                    freeAtHomeBridge.channelUpdateHandler.registerChannel(deviceID, deviceChannel, deviceStateOdp, this,
                             new ChannelUID(this.getThing().getUID(),
-                                    FreeAtHomeSystemBindingConstants.SWITCH_CHANNEL_ID),
+                                    FreeAtHomeSystemBindingConstants.WINDOWSENSOR_CHANNEL_STATE_ID),
                             new BooleanValueStateConverter());
+
+                    freeAtHomeBridge.channelUpdateHandler.registerChannel(deviceID, deviceChannel, devicePosOdp, this,
+                            new ChannelUID(this.getThing().getUID(),
+                                    FreeAtHomeSystemBindingConstants.WINDOWSENSOR_CHANNEL_POS_ID),
+                            new DecimalValueStateConverter());
 
                     logger.debug("Device - online: {}", deviceID);
 
@@ -129,8 +156,9 @@ public class FreeAtHomeSwitchHandler extends FreeAtHomeSystemBaseHandler {
 
     @Override
     public void dispose() {
-        // Unegister device and specific channel for event based state updated
-        freeAtHomeBridge.channelUpdateHandler.unregisterChannel(deviceID, deviceChannel, deviceOdp);
+        // Unregister device and specific channel for event based state updated
+        freeAtHomeBridge.channelUpdateHandler.unregisterChannel(deviceID, deviceChannel, deviceStateOdp);
+        freeAtHomeBridge.channelUpdateHandler.unregisterChannel(deviceID, deviceChannel, devicePosOdp);
 
         logger.debug("Device removed {}", deviceID);
     }
@@ -139,56 +167,7 @@ public class FreeAtHomeSwitchHandler extends FreeAtHomeSystemBaseHandler {
     public void handleCommand(ChannelUID channelUID, Command command) {
         updateStatus(ThingStatus.ONLINE);
 
-        // if (command instanceof RefreshType) {
-        // freeAtHomeBridge.getDatapoint(0, deviceId, ".ch0006", ".odp0000");
-        // }
-        //
-        // if (command instanceof OnOffType) {
-        // OnOffType locCommand = (OnOffType) command;
-        //
-        // if (locCommand.equals(OnOffType.ON)) {
-        // freeAtHomeBridge.setDatapoint(0, deviceId, ".ch0006", ".idp0000", "1");
-        // updateState(channelUID, OnOffType.ON);
-        // }
-        //
-        // if (locCommand.equals(OnOffType.OFF)) {
-        // freeAtHomeBridge.setDatapoint(0, deviceId, ".ch0006", ".idp0000", "0");
-        // updateState(channelUID, OnOffType.OFF);
-        // }
-        // }
-
-        if (command instanceof RefreshType) {
-            String valueString = freeAtHomeBridge.getDatapoint(deviceID, deviceChannel, deviceOdp);
-
-            int value;
-
-            try {
-                value = Integer.parseInt(valueString);
-            } catch (NumberFormatException e) {
-                value = 0;
-            }
-
-            if (1 == value) {
-                updateState(channelUID, OnOffType.ON);
-            } else {
-                updateState(channelUID, OnOffType.OFF);
-            }
-        }
-
-        if (command instanceof OnOffType) {
-            OnOffType locCommand = (OnOffType) command;
-
-            if (locCommand.equals(OnOffType.ON)) {
-                freeAtHomeBridge.setDatapoint(deviceID, deviceChannel, deviceIdp, "1");
-                updateState(channelUID, OnOffType.ON);
-            }
-
-            if (locCommand.equals(OnOffType.OFF)) {
-                freeAtHomeBridge.setDatapoint(deviceID, deviceChannel, deviceIdp, "0");
-                updateState(channelUID, OnOffType.OFF);
-            }
-        }
-
+        // update only via Websocket
         logger.debug("Handle command switch {} - at channel {} - full command {}", deviceID, channelUID.getAsString(),
                 command.toFullString());
     }

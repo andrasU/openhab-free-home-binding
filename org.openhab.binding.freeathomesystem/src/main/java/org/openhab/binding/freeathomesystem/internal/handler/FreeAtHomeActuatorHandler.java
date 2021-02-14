@@ -31,14 +31,14 @@ import org.slf4j.LoggerFactory;
 import ValueStateConverters.BooleanValueStateConverter;
 
 /**
- * The {@link FreeAtHomeSwitchHandler} is responsible for handling commands, which are
+ * The {@link FreeAtHomeActuatorHandler} is responsible for handling commands, which are
  * sent to one of the channels.
  *
  * @author Andras Uhrin - Initial contribution
  *
  */
 
-public class FreeAtHomeSwitchHandler_21 extends FreeAtHomeSystemBaseHandler {
+public class FreeAtHomeActuatorHandler extends FreeAtHomeSystemBaseHandler {
 
     private String deviceID;
     private String deviceChannel;
@@ -47,9 +47,9 @@ public class FreeAtHomeSwitchHandler_21 extends FreeAtHomeSystemBaseHandler {
 
     private FreeAtHomeBridgeHandler freeAtHomeBridge = null;
 
-    private final Logger logger = LoggerFactory.getLogger(FreeAtHomeSwitchHandler_21.class);
+    private final Logger logger = LoggerFactory.getLogger(FreeAtHomeActuatorHandler.class);
 
-    public FreeAtHomeSwitchHandler_21(Thing thing) {
+    public FreeAtHomeActuatorHandler(Thing thing) {
         super(thing);
     }
 
@@ -61,6 +61,7 @@ public class FreeAtHomeSwitchHandler_21 extends FreeAtHomeSystemBaseHandler {
         deviceID = properties.get("deviceId");
 
         String deviceInterface = properties.get("interface");
+        deviceChannel = properties.get("channelId");
 
         if (null != bridge) {
             ThingHandler handler = bridge.getHandler();
@@ -69,16 +70,8 @@ public class FreeAtHomeSwitchHandler_21 extends FreeAtHomeSystemBaseHandler {
                 freeAtHomeBridge = (FreeAtHomeBridgeHandler) handler;
 
                 // Initialize the communication device channel properties
-                if (deviceInterface.equalsIgnoreCase(FreeAtHomeDeviceDescription.DEVICE_INTERFACE_WIRELESS_TYPE)) {
-                    deviceChannel = "ch0006";
-                    deviceOdp = "odp0000";
-                    deviceIdp = "idp0000";
-                } else if (deviceInterface
-                        .equalsIgnoreCase(FreeAtHomeDeviceDescription.DEVICE_INTERFACE_VIRTUAL_TYPE)) {
-                    deviceChannel = "ch0000";
-                    deviceOdp = "odp0000";
-                    deviceIdp = "idp0000";
-                }
+                deviceOdp = "odp0000";
+                deviceIdp = "idp0000";
 
                 logger.debug("Initialize switch - {}", deviceID);
 
@@ -112,7 +105,7 @@ public class FreeAtHomeSwitchHandler_21 extends FreeAtHomeSystemBaseHandler {
                     updateStatus(ThingStatus.ONLINE);
                 } else {
                     updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
-                            "No online updates are received");
+                            "No online updates are possible");
                 }
 
             } else {
@@ -138,24 +131,6 @@ public class FreeAtHomeSwitchHandler_21 extends FreeAtHomeSystemBaseHandler {
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
         updateStatus(ThingStatus.ONLINE);
-
-        // if (command instanceof RefreshType) {
-        // freeAtHomeBridge.getDatapoint(0, deviceId, ".ch0006", ".odp0000");
-        // }
-        //
-        // if (command instanceof OnOffType) {
-        // OnOffType locCommand = (OnOffType) command;
-        //
-        // if (locCommand.equals(OnOffType.ON)) {
-        // freeAtHomeBridge.setDatapoint(0, deviceId, ".ch0006", ".idp0000", "1");
-        // updateState(channelUID, OnOffType.ON);
-        // }
-        //
-        // if (locCommand.equals(OnOffType.OFF)) {
-        // freeAtHomeBridge.setDatapoint(0, deviceId, ".ch0006", ".idp0000", "0");
-        // updateState(channelUID, OnOffType.OFF);
-        // }
-        // }
 
         if (command instanceof RefreshType) {
             String valueString = freeAtHomeBridge.getDatapoint(deviceID, deviceChannel, deviceOdp);

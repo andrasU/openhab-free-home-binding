@@ -13,6 +13,7 @@
 
 package org.openhab.binding.freeathomesystem.internal.handler;
 
+import java.io.StringReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Iterator;
@@ -53,6 +54,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.stream.JsonReader;
 
 /**
  * The {@link FreeAtHomeBridgeHandler} is responsible for handling the free@home bridge and
@@ -126,8 +128,12 @@ public class FreeAtHomeBridgeHandler extends BaseBridgeHandler {
             // Get component List
             String deviceString = new String(response.getContent());
 
+            JsonReader reader = new JsonReader(new StringReader(deviceString));
+
+            reader.setLenient(true);
+
             JsonParser parser = new JsonParser();
-            JsonElement jsonTree = parser.parse(deviceString);
+            JsonElement jsonTree = parser.parse(reader);
 
             // check the output
             if (jsonTree.isJsonObject()) {
@@ -138,9 +144,6 @@ public class FreeAtHomeBridgeHandler extends BaseBridgeHandler {
 
                 JsonElement element = jsonValueArray.get(0);
                 String value = element.getAsString();
-
-                System.out.print(
-                        "getDataPoint " + deviceId + " " + response.getContentAsString() + " value:" + value + "\n");
 
                 return value;
             }
@@ -173,8 +176,12 @@ public class FreeAtHomeBridgeHandler extends BaseBridgeHandler {
 
     public void processSocketEvent(String receivedText) {
 
+        JsonReader reader = new JsonReader(new StringReader(receivedText));
+
+        reader.setLenient(true);
+
         JsonParser parser = new JsonParser();
-        JsonElement jsonTree = parser.parse(receivedText);
+        JsonElement jsonTree = parser.parse(reader);
 
         // check the output
         if (jsonTree.isJsonObject()) {
@@ -497,8 +504,9 @@ public class FreeAtHomeBridgeHandler extends BaseBridgeHandler {
 
     public FreeAtHomeDeviceList getDeviceDeviceList() {
         FreeAtHomeSysApDeviceList deviceList = new FreeAtHomeSysApDeviceList(httpClient, ipAddress, sysApUID);
-        // FreeAtHomeTestDeviceList deviceList = new FreeAtHomeTestDeviceList("devicelist.json", "getconfig.json",
-        // sysApUID);
+        // FreeAtHomeTestDeviceList deviceList = new FreeAtHomeTestDeviceList(
+        // "responsedevice.json",
+        // "response_formatted.json", sysApUID);
 
         deviceList.buildComponentList();
 
