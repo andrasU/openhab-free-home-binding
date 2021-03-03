@@ -8,5 +8,5 @@
 This openhab binding allows you to connect your free@home Smart Home system from ABB / Busch-Jaeger to OpenHAB and to control and observe most of the components. 
 It requires a System Access Point with version 2.3.1 or higher.
 
-This is only the JAR binary, the current source code can be found ![here](https://github.com/andrasU/openhab-addons/tree/freeathome_system/bundles/org.openhab.binding.freeathomesystem)
+This is only the JAR binary, the current source code can be found [here](https://github.com/andrasU/openhab-addons/tree/freeathome_system/bundles/org.openhab.binding.freeathomesystem)
 
